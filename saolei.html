@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>saolei</title>
+	<style type="text/css">
+	#newgame{
+		width: 200px;
+		height:50px;
+		border-radius: 10px;
+		background-color: #c60;
+		margin: 20px auto;
+		line-height: 50px;
+		text-align: center;
+		font-size: 20px;
+		font-weight: bold;
+
+	}
+	#game_info{
+		margin:10px auto;
+		width:200px;
+		text-align: center;
+	}
+	#grid_container{
+		width: 600px;
+		height:600px;
+		margin: 20px auto;
+		padding: 20px;
+		border:solid #000 1px;
+		border-radius: 1em;
+		position: relative;
+	}
+	.grid-cell{
+		position: absolute;
+		background-color: #6cf;
+		width: 70px;
+		height:70px;
+		margin: 5px;
+		text-align: center;
+		line-height: 70px;
+	}
+	#gameover{
+		width:400px;
+		height:200px;
+		position: fixed;
+		background-color: #fc9;
+		border-radius: 10px;
+		opacity: 0.8;
+		top: 200px;
+		left: 200px;
+		display: none;
+		line-height: 180px;
+		text-align: center;
+	}
+	.gameover_bt{
+		position: absolute;
+		bottom: 20px;
+	}
+	#gameover_ok{
+		left: 275px;
+	}
+	#gameover_again{
+		left: 325px;
+	}
+	</style>
+</head>
+<body>
+    <p id="newgame">new game</p>
+    <p id="game_info">共有10个雷</p>
+	<div id="grid_container">
+	</div>
+	<div id="gameover">
+	    <p id="gameover_info"></p>
+		<input type="button" value="ok!" class="gameover_bt" id="gameover_ok">
+		<input type="button" value="again!" class="gameover_bt" id="gameover_again">
+	</div>
+	<script type="text/javascript">
+	window.onload=function(){
+		document.oncontextmenu=clickRight;
+		newgame();
+		var gmov_ok=document.getElementById("gameover_ok");
+		var gmov_again=document.getElementById("gameover_again");
+		gmov_ok.onclick=gameinfoHide;
+		gmov_again.onclick=function(){
+			gameinfoHide();
+			newgame();
+		}
+		var newgame_bt=document.getElementById("newgame");
+		newgame_bt.onclick=function(){
+			newgame();
+		}
+
+	};
+	var globalVar={
+		dilei:[],
+		size:8,
+		cellWidth:70,
+		cellMargin:5,
+		containerPadding:20,
+		dileiCount:10,
+		container:document.getElementById("grid_container"),
+		displayed:[],
+		cliced:0,
+		gameover:false
+	}
+	function newgame(){
+		init();
+	}
+	function init(){
+		    globalVar.gameover=false;
+		    globalVar.cliced=0;
+			for(var i=0;i<globalVar.size;i++){
+			globalVar.dilei[i]=[];
+			globalVar.displayed[i]=[];
+			for(var j=0;j<globalVar.size;j++){
+				globalVar.dilei[i][j]=0;
+				globalVar.displayed[i][j]=false;
+			}}
+
+		var count=0;
+		while(count<globalVar.dileiCount){
+			var randx=Math.floor(Math.random()*globalVar.size);
+			var randy=Math.floor(Math.random()*globalVar.size);
+			//console.log(count+" "+randx+" "+randy);
+			if(globalVar.dilei[randx][randy]==0){
+				globalVar.dilei[randx][randy]=-1;//标雷
+				count++;
+			}
+		}
+		for(var i=0;i<globalVar.size;i++){
+			for(var j=0;j<globalVar.size;j++){
+				if(globalVar.dilei[i][j]!=-1){
+					globalVar.dilei[i][j]=getCountAround(i,j);
+				}
+			}
+		}
+		globalVar.container.innerHTML="";
+		
+		for(var i=0;i<globalVar.size;i++){
+		//	globalVar.dilei[i]=[];
+			for(var j=0;j<globalVar.size;j++){
+				//globalVar.dilei[i][j]=0;
+				var cell=document.createElement("div");
+				cell.className="grid-cell";
+				cell.id="grid_cell_"+i+"_"+j;
+				cell.style.backgroundColor="#6cf";
+				cell.innerHTML="";
+				
+				cell.style.top=getPosTop(i,j)+"px";
+				cell.style.left=getPosLeft(i,j)+"px";
+				cell.onclick=clickCell;
+				globalVar.container.appendChild(cell);
+				//cell.innerHTML=globalVar.dilei[i][j];
+
+			}
+		}
+		//console.log(globalVar.dilei);
+
+	}
+	function gameinfoShow(){
+		var gmov=document.getElementById("gameover");
+		gmov.style.top=(document.documentElement.clientHeight/2-100)+"px";
+		gmov.style.left=(document.documentElement.clientWidth/2-200)+"px";
+		gmov.style.display="block";
+	}
+	function gameinfoHide(){
+		var gmov=document.getElementById("gameover");
+		gmov.style.display="none";
+	}
+	function clickCell(event){
+		var	e=event||window.event;
+		//console.log(e.button);
+		var target=e.target;
+		//console.log(target.id);
+		var id=target.id.split('_');
+		var i=id[2];
+		var j=id[3];
+		//console.log(i+" "+j);
+		if(document.getElementById("grid_cell_"+i+"_"+j).innerHTML!="雷"){
+
+		renderNumber(i,j);}
+
+	}
+	function clickRight(){
+		//console.log(event.target);
+		var	e=event||window.event;
+		var target=e.target;
+		var id=target.id.split('_');
+		var i=id[2];
+		var j=id[3];
+		if(globalVar.displayed[i][j]){
+			return;
+		}
+		var clickedCell=document.getElementById("grid_cell_"+i+"_"+j);
+		if(clickedCell.innerHTML!='雷'){
+		clickedCell.innerHTML='雷';
+	    }else{
+	    	clickedCell.innerHTML='';
+	    }
+
+		return false;
+	}
+	function renderNumber(i,j){
+		var clickedCell=document.getElementById("grid_cell_"+i+"_"+j);
+		clickedCell.onclick=null;
+		//clickedCell.oncontextmenu=null;
+		
+		if(globalVar.dilei[i][j]==-1){
+			gameover();
+		}
+		else if(globalVar.dilei[i][j]!=0){
+		clickedCell.style.backgroundColor="#ccc";
+		clickedCell.innerHTML=globalVar.dilei[i][j];
+		clickedCell.style.fontSize="20px";
+		globalVar.displayed[i][j]=true;
+		if(!globalVar.gameover){
+		globalVar.cliced++;}
+		if(globalVar.cliced==globalVar.size*globalVar.size-globalVar.dileiCount)
+		{
+			//console.log(globalVar.cliced);
+			//alert(globalVar.cliced+"你赢了！");
+			gameinfoShow();
+			var gmov_info=document.getElementById("gameover_info");
+			gmov_info.innerHTML="你赢了~嘤嘤嘤~";
+			return;
+
+		}		
+	    }
+	    else{
+	    	renderZero(i,j);
+	    }
+	}
+	function renderZero(i,j){
+		if(globalVar.displayed[i][j]){
+			return;
+		}
+		//console.log(i+" "+j);
+		var clickedCell=document.getElementById("grid_cell_"+i+"_"+j);
+		clickedCell.onclick=null;
+		clickedCell.style.backgroundColor="#ccc";
+		i=parseInt(i);
+		j=parseInt(j);
+		globalVar.displayed[i][j]=true;
+		if(!globalVar.gameover){
+		globalVar.cliced++;}
+		if(i>0){
+			if(j>0){
+		if(globalVar.dilei[i-1][j-1]==0){
+			renderZero(i-1,j-1);
+		}
+		else if(globalVar.dilei[i-1][j-1]!=-1&&!globalVar.displayed[i-1][j-1]){
+			renderNumber(i-1,j-1);
+		}
+	    }
+		if(globalVar.dilei[i-1][j]==0){
+			renderZero(i-1,j);
+		}
+		else if(globalVar.dilei[i-1][j]!=-1&&!globalVar.displayed[i-1][j]){
+			renderNumber(i-1,j);
+		}
+		if(j<globalVar.size-1){
+		if(globalVar.dilei[i-1][j+1]==0){
+			renderZero(i-1,j+1);
+		 }
+		 else if(globalVar.dilei[i-1][j+1]!=-1&&!globalVar.displayed[i-1][j+1]){
+			renderNumber(i-1,j+1);
+		}
+	     }
+	    }
+	    if(j>0){
+		if(globalVar.dilei[i][j-1]==0){
+			renderZero(i,j-1);
+		}else if(globalVar.dilei[i][j-1]!=-1&&!globalVar.displayed[i][j-1]){
+			renderNumber(i,j-1);
+		}
+		if(i<globalVar.size-1){
+		if(globalVar.dilei[i+1][j-1]==0){
+			renderZero(i+1,j-1);
+		}
+		else if(globalVar.dilei[i+1][j-1]!=-1&&!globalVar.displayed[i+1][j-1]){
+			renderNumber(i+1,j-1);
+		}
+	    }
+	    }
+		if(i<globalVar.size-1){
+		if(globalVar.dilei[i+1][j]==0){
+			renderZero(i+1,j);
+		}
+		else if(globalVar.dilei[i+1][j]!=-1&&!globalVar.displayed[i+1][j]){
+			renderNumber(i+1,j);
+		}
+	}
+		if(j<globalVar.size-1){
+		if(globalVar.dilei[i][j+1]==0){
+			renderZero(i,j+1);
+		}else if(globalVar.dilei[i][j+1]!=-1&&!globalVar.displayed[i][j+1]){
+			renderNumber(i,j+1);
+		}
+		if(i<globalVar.size-1){
+		if(globalVar.dilei[i+1][j+1]==0){
+			renderZero(i+1,j+1);
+		}
+		else if(globalVar.dilei[i+1][j+1]!=-1&&!globalVar.displayed[i+1][j+1]){
+			renderNumber(i+1,j+1);
+		}
+	    }
+	    }
+
+	
+	
+	}
+	function gameover(){
+		globalVar.gameover=true;
+		renderAll();
+		gameinfoShow();
+		var info=document.getElementById("gameover_info");
+		info.innerHTML="你输了~~哈哈哈~";
+		//alert("gameover");
+	}
+
+	function renderAll(){
+		for(var i=0;i<globalVar.size;i++){
+			for(var j=0;j<globalVar.size;j++){
+			if(!globalVar.displayed[i][j]){
+				if(globalVar.dilei[i][j]!=-1){
+				renderNumber(i,j);}
+				else{
+					var d=document.getElementById("grid_cell_"+i+"_"+j);
+					d.innerHTML="雷！";
+					d.style.backgroundColor="#ccc";
+				}
+			}
+			
+		}
+	}
+	}
+	function getPosTop(i,j){
+		return i*(globalVar.cellWidth+globalVar.cellMargin)+globalVar.containerPadding;
+	}
+	function getPosLeft(i,j){
+		return j*(globalVar.cellWidth+globalVar.cellMargin)+globalVar.containerPadding;
+	}
+	function getCountAround(i,j){
+		var c=0;
+		if(i>0){
+			if(j>0){
+		if(globalVar.dilei[i-1][j-1]==-1){
+			c++;
+		}}
+		if(globalVar.dilei[i-1][j]==-1){
+			c++;
+		}
+		if(j<globalVar.size-1){
+		if(globalVar.dilei[i-1][j+1]==-1){
+			c++;
+		 }
+	     }
+	    }
+	    if(j>0){
+		if(globalVar.dilei[i][j-1]==-1){
+			c++;
+		}
+		if(i<globalVar.size-1){
+		if(globalVar.dilei[i+1][j-1]==-1){
+			c++;
+		}}
+	    }
+		if(i<globalVar.size-1){
+		if(globalVar.dilei[i+1][j]==-1){
+			c++;
+		}}
+		if(j<globalVar.size-1){
+		if(globalVar.dilei[i][j+1]==-1){
+			c++;
+		}
+		if(i<globalVar.size-1){
+		if(globalVar.dilei[i+1][j+1]==-1){
+			c++;
+		}
+	    }
+	    }
+		return c;
+	}
+
+	</script>
+</body>
+</html>
