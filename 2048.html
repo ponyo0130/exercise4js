@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device_width,height=device_height,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+	<meta name="viewport" content="width=device-width,height=device-height,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
 	<title>2048</title>
 	<style type="text/css">
 	header{
 		display: block;
 		margin: 0 auto;
-		width:500px;
+		width:100%;
 		text-align: center;
 		font-family: Arial;
 	}
@@ -90,8 +90,17 @@
 var board=[];
 var score=0;
 var hasConfilicted=[];
+var documentWidth=window.screen.availWidth;
+var gridContainerWidth=0.92*documentWidth;
+var cellSideLength=0.18*documentWidth;
+var cellSpace=0.04*documentWidth;
+var startx=0;
+var starty=0;
+var endx=0;
+var endy=0;
 //main
 	$(function(){
+		prepareForMobile();
 		newgame();
 	});
 	function newgame(){
@@ -120,9 +129,27 @@ var hasConfilicted=[];
 		}
 		updateBoardView();
 	}
+	function prepareForMobile(){
+		if(documentWidth>500){
+			gridContainerWidth=500;
+			cellSpace=20;
+			cellSideLength=100;
+		}
+		$("#grid_container").css('width',gridContainerWidth-2*cellSpace);
+		$("#grid_container").css('height',gridContainerWidth-2*cellSpace);
+		$("#grid_container").css('padding',cellSpace);
+		$("#grid_container").css('border-radius',0.02*gridContainerWidth);
+
+		$(".grid-cell").css('width',cellSideLength);
+		$(".grid-cell").css('height',cellSideLength);
+		$(".grid-cell").css('border-radius',0.02*cellSideLength);
+
+	}
 	$(document).keydown(function(event){
 		//console.log(event.keyCode);
-		event.preventDefault();
+		//var kc=event.keyCode
+		if(event.keyCode>=37&&event.keyCode<=40){
+		event.preventDefault();}
 		switch(event.keyCode){
 			case 37://left
 			if(moveLeft()){
@@ -151,6 +178,70 @@ var hasConfilicted=[];
 			default:break;
 		}
 	});
+	document.addEventListener("touchstart",function(event){
+		//console.log("touchstart");
+		startx=event.touches[0].pageX;
+		starty=event.touches[0].pageY;
+		//console.log(startx+"  "+starty);
+	},false);
+	document.addEventListener("touchend",function(event){
+		//console.log("touchend");
+		endx=event.changedTouches[0].pageX;
+		endy=event.changedTouches[0].pageY;
+		//console.log(endx+"  "+endy);
+
+		var deltax=endx-startx;
+		var deltay=endy-starty;
+		if(Math.abs(deltax)<0.3*documentWidth&&Math.abs(deltay)<0.3*documentWidth){
+			return;
+		}
+
+		if(Math.abs(deltax)>Math.abs(deltay))
+		{
+			if(deltax>0){
+				//right
+				if(moveRight()){
+				setTimeout("generateOneNumber()",210);
+				setTimeout("isgameover()",300);
+			}
+			}else{
+				//left
+				if(moveLeft()){
+				setTimeout("generateOneNumber()",210);
+				setTimeout("isgameover()",300);
+			}
+			}
+		}else{
+			if(deltay>0){
+				//down
+				if(moveDown()){
+				setTimeout("generateOneNumber()",210);
+				setTimeout("isgameover()",300);
+			}
+			}else{
+				//top
+				if(moveTop()){
+				setTimeout("generateOneNumber()",210);
+				setTimeout("isgameover()",300);
+			}
+			}
+
+		}
+	},false);
+	/*document.ontouchstart=function(event){
+		console.log("touch");
+		startx=event.touches[0].pageX;
+		starty=event.touches[0].pageY;
+	};
+	document.ontouchend=function(event){
+		endx=event.changedTouches[0].pageX;
+		endy=event.changedTouches[0].pageY;
+		console.log(endx+"  "+endy);
+	}*/
+
+	document.addEventListener("touchmove",function(event){
+		event.preventDefault();
+	},false);
 	//util
 	function moveLeft(){
 		if(!canMoveLeft(board)){
@@ -374,10 +465,10 @@ var hasConfilicted=[];
 	}
 
 	function getPosTop(i,j){
-		return 20+i*120;
+		return cellSpace+i*(cellSpace+cellSideLength);
 	}
 	function getPosLeft(i,j){
-		return 20+j*120;
+		return cellSpace+j*(cellSpace+cellSideLength);
 	}
 	function updateBoardView(){
 		$(".number-cell").remove();
@@ -389,12 +480,12 @@ var hasConfilicted=[];
 				if(board[i][j]==0){
 					theNumberCell.css('width','0px');
 					theNumberCell.css('height','0px');
-					theNumberCell.css('top',getPosTop(i,j)+50);
-					theNumberCell.css('left',getPosLeft(i,j)+50);
+					theNumberCell.css('top',getPosTop(i,j)+cellSideLength/2);
+					theNumberCell.css('left',getPosLeft(i,j)+cellSideLength/2);
 
 				}else{
-					theNumberCell.css('width','100px');
-					theNumberCell.css('height','100px');
+					theNumberCell.css('width',cellSideLength+'px');
+					theNumberCell.css('height',cellSideLength+'px');
 					theNumberCell.css('top',getPosTop(i,j));
 					theNumberCell.css('left',getPosLeft(i,j));
 					theNumberCell.css('background-color',getNumberBgColor(board[i][j]));
@@ -403,6 +494,9 @@ var hasConfilicted=[];
 				}	
 				hasConfilicted[i][j]=false;	
 			}
+			$(".number-cell").css("line-height",cellSideLength+"px");
+			$(".number-cell").css("font-size",0.6*cellSideLength+"px");
+
 		}
 	}
 	function getNumberBgColor(number){
@@ -470,8 +564,8 @@ var hasConfilicted=[];
 		numberCell.css('color',getNumberColor(n));
 		numberCell.text(n);
 		numberCell.animate({
-			width:"100px",
-			height:"100px",
+			width:cellSideLength+"px",
+			height:cellSideLength+"px",
 			top:getPosTop(i,j),
 			left:getPosLeft(i,j)
 		},50);
